@@ -80,8 +80,6 @@ async def sidick_reaction(message):
 
   now = datetime.datetime.now(timezone)
 
-
-
   #stickers
   pki = get(client.emojis, name='sidiqpki')
   oppa = get(client.emojis, name='sidiqoppa')
@@ -93,6 +91,7 @@ async def sidick_reaction(message):
     coolSidiq += 1
 
     if(coolSidiq == 5):
+      global coolSidiqTime
       coolSidiqTime = now
   
     if(coolSidiq > 5):
@@ -132,6 +131,7 @@ async def sidick_kasar(message):
   #now
   now = datetime.datetime.now(timezone)
   if(coolKasar == 2):
+      global coolKasarTime
       coolKasarTime = now
   
   if(coolKasar > 2):
