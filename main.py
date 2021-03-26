@@ -8,16 +8,18 @@ import pytz
 from nyala import keep_alive
 import random
 from message_database import message_database
+from collections import deque
 
-client = commands.Bot(command_prefix=["sidiq ", "siddick ", "sidick "])
+client = commands.Bot(command_prefix=[
+    "sidiq ", "siddick ", "sidick ", "Sidiq ", "Siddick ", "Sidick"
+],
+                      case_insensitive=True)
 
 #times
 timezone = pytz.timezone('Asia/Jakarta')
 enjing = timezone.localize(datetime.datetime(2002, 9, 26, 00, 00, 00))
 siang = timezone.localize(datetime.datetime(2002, 9, 26, 11, 59, 00))
 dalu = timezone.localize(datetime.datetime(2002, 9, 26, 17, 00, 00))
-coolKasar = 0
-coolSidiq = 0
 #kosakata misuh
 pisuhan = ['jancok', 'munyuk', 'bajingan', 'asu']
 
@@ -25,10 +27,17 @@ sidiq_id = os.getenv('SIDIQ')
 
 messages_database = message_database()
 
+coolKasar = 0
+coolSidiq = 0
+coolKasarTime = deque([])
+coolSidiqTime = deque([])
+
 
 @client.command()
 async def pisuhi(ctx):
     now = datetime.datetime.now(timezone)
+    if (len(ctx.message.mentions) == 0):
+        await ctx.send('misuhi sopo cuk')
     if (now.time() > dalu.time()):
         mentions = []
         mentions.extend(ctx.message.mentions)
@@ -42,16 +51,53 @@ async def pisuhi(ctx):
 
 
 @client.command()
-@cooldown(rate=2, per=60, type=BucketType.channel)
+@cooldown(rate=2, per=15, type=BucketType.channel)
 async def mode(ctx, mode):
     now = datetime.datetime.now(timezone)
     now_time = 'enjing' if enjing.time() <= now.time() <= siang.time() else (
         'siang' if enjing.time() <= now.time() <= siang.time() else 'dalu')
     modes = {
         'alus': f'Assalamualaikum Wr.Wb., sugeng {now_time} nami kula sidick',
-        'kasar': 'Jancok kabeh'
+        'kasar': 'Jancok kabeh @here',
     }
     await ctx.send(modes[mode.lower()])
+
+
+@client.command()
+@cooldown(rate=2, per=15, type=BucketType.channel)
+async def gombalin(ctx):
+    mentions = []
+    mentions.extend(ctx.message.mentions)
+    mentions.extend(ctx.message.role_mentions)
+    gombal = [
+        f'Kalau <@{ctx.message.author.id}> adalah Bumi, maka aku adalah atmosfirnya. Dengan begitu setiap saat bisa melindungi <@{ctx.message.author.id}> dari sakitnya serangan meteor dan komet',
+        f'kipas-kipas apa yang enak? \nkipasin meki <@{ctx.message.author.id}>',
+        f'km tw g bedany story ig sm <@{ctx.message.author.id}>? \nkl story ig closefriend, kl <@{ctx.message.author.id}> gf',
+        f'kamu tau ga bedanya pki sama <@{ctx.message.author}>?\n kalo pki komunis kalo <@{ctx.message.author.id}> ko manis'
+    ]
+
+    if (len(mentions) == 0):
+        await ctx.send(random.choice(gombal) + '\n>///<')
+
+    for i in mentions:
+        gombal = [
+            f'Kalau <@{i.id}> adalah Bumi, maka aku adalah atmosfirnya. Dengan begitu setiap saat bisa melindungi <@{i.id}> dari sakitnya serangan meteor dan komet',
+            f'kipas-kipas apa yang enak? \nkipasin meki <@{i.id}>',
+            f'km tw g bedany story ig sm <@{i.id}>? \nkl story ig closefriend, kl <@{i.id}> gf',
+            f'kamu tau ga bedanya pki sama <@{i.id}>?\n kalo pki komunis kalo <@{i.id}> ko manis'
+        ]
+
+        gombalrole = [
+            f'Kalau <@&{i.id}> adalah Bumi, maka aku adalah atmosfirnya. Dengan begitu setiap saat bisa melindungi <@&{i.id}> dari sakitnya serangan meteor dan komet',
+            f'kipas-kipas apa yang enak? \nkipasin meki <@&{i.id}>',
+            f'km tw g bedany story ig sm <@&{i.id}>? \nkl story ig closefriend, kl <@&{i.id}> gf',
+            f'kamu tau ga bedanya pki sama <@&{i.id}>?\n kalo pki komunis kalo <@&{i.id}> ko manis'
+        ]
+
+        if (isinstance(i, discord.role.Role)):
+            await ctx.send(random.choice(gombalrole) + '\n>///<')
+            continue
+        await ctx.send(random.choice(gombal) + '\n>///<')
 
 
 @client.command(aliases=['r'])
@@ -95,27 +141,34 @@ async def sidick_reaction(message):
 
     if (message.author.id == int(sidiq_id)):
         global coolSidiq
-        coolSidiq += 1
-
-        if (coolSidiq == 5):
-            global coolSidiqTime
-            coolSidiqTime = now
-
-        if (coolSidiq > 5):
+        global coolSidiqTime
+        coolSidiqTime.append(now)
+        print(len(coolSidiqTime))
+        if (len(coolSidiqTime) > 1):
+            timeDiff = (coolSidiqTime[-1] - coolSidiqTime[-2]).total_seconds()
+            print(timeDiff)
+            if (timeDiff < 10):
+                coolSidiq += 1
+            else:
+                coolSidiq = 0
+        else:
+            coolSidiq += 1
+        print(coolSidiq)
+        if (coolSidiq == 3):
             # Create datetime objects for each time (a and b)
             dateTimeA = datetime.datetime.combine(datetime.date.today(),
-                                                  coolSidiqTime.time())
+                                                  coolSidiqTime[-1].time())
             dateTimeB = datetime.datetime.combine(datetime.date.today(),
                                                   now.time())
             # Get the difference between datetimes (as timedelta)
             dateTimeDifference = dateTimeB - dateTimeA
             # Divide difference in seconds by number of seconds in hour (3600)
             dateTimeDifferenceInSeconds = dateTimeDifference.total_seconds()
-
+            print(dateTimeDifferenceInSeconds)
             if (dateTimeDifferenceInSeconds > 60.0):
                 coolSidiq = 0
 
-        if (coolSidiq <= 5):
+        if (coolSidiq < 3):
             await message.add_reaction(pki)
             await message.add_reaction(oppa)
             await message.add_reaction(makanbang)
@@ -140,32 +193,50 @@ async def sidick_kasar(message):
 
     #now
     now = datetime.datetime.now(timezone)
-    if (coolKasar == 2):
-        global coolKasarTime
-        coolKasarTime = now
+    global coolKasarTime
 
-    if (coolKasar > 2):
+    if (coolKasar == 2):
         # Create datetime objects for each time (a and b)
         dateTimeA = datetime.datetime.combine(datetime.date.today(),
-                                              coolKasarTime.time())
+                                              coolKasarTime[-1].time())
         dateTimeB = datetime.datetime.combine(datetime.date.today(),
                                               now.time())
         # Get the difference between datetimes (as timedelta)
         dateTimeDifference = dateTimeB - dateTimeA
         # Divide difference in seconds by number of seconds in hour (3600)
         dateTimeDifferenceInSeconds = dateTimeDifference.total_seconds()
-
         if (dateTimeDifferenceInSeconds > 15.0):
             coolKasar = 0
 
-    if (now.time() >= dalu.time() and coolKasar <= 2):
+    if (now.time() >= dalu.time() and coolKasar < 2):
         if (client.user.mentioned_in(message)):
-            coolKasar += 1
+            if (len(coolKasarTime) == 2):
+                coolKasarTime.popleft()
+            coolKasarTime.append(now)
+            if (len(coolKasarTime) > 1):
+                timeDiff = (coolKasarTime[-1] -
+                            coolKasarTime[-2]).total_seconds()
+                print(timeDiff)
+                if (timeDiff < 10):
+                    coolKasar += 1
+                else:
+                    coolKasar = 0
+            else:
+                coolKasar += 1
             await message.channel.send('rasah ngetag-ngetag')
 
         if (f'<@!{sidiq_id}>' in message.content
                 or f'<@{sidiq_id}>' in message.content):
-            coolKasar += 1
+            coolKasarTime.append(now)
+            if (len(coolKasarTime) > 1):
+                timeDiff = (coolKasarTime[-1] -
+                            coolKasarTime[-2]).total_seconds()
+                if (timeDiff > 10):
+                    coolKasar += 1
+                else:
+                    coolKasar = 0
+            else:
+                coolKasar += 1
             await message.add_reaction(ngefak)
             await message.channel.send('rasah ngetag-ngetag')
 
