@@ -2,6 +2,7 @@ import discord
 import os 
 from discord.utils import get
 from discord.ext import commands
+from discord.ext.commands import cooldown, BucketType
 import datetime
 import pytz
 from nyala import keep_alive
@@ -15,7 +16,8 @@ timezone = pytz.timezone('Asia/Jakarta')
 enjing = timezone.localize(datetime.datetime(2002,9,26,00,00,00))
 siang = timezone.localize(datetime.datetime(2002,9,26,11,59,00))
 dalu = timezone.localize(datetime.datetime(2002,9,26,17,00,00))
-
+coolKasar = 0
+coolSidiq = 0
 #kosakata misuh
 pisuhan = ['jancok', 'munyuk', 'bajingan', 'asu']
 
@@ -39,6 +41,7 @@ async def pisuhi(ctx):
       await ctx.send(f'{misuh} koe <@{i.id}>')
 
 @client.command()
+@cooldown(rate=2, per=60 , type= BucketType.channel)
 async def mode(ctx, mode):
   now = datetime.datetime.now(timezone)
   now_time = 'enjing' if enjing.time() <= now.time() <= siang.time() else ('siang' if enjing.time() <= now.time() <= siang.time() else 'dalu')
@@ -74,13 +77,11 @@ async def on_ready():
 
 @client.listen('on_message')
 async def sidick_reaction(message):
-  
-  #sidiq aliases
-  sidiq = ("sidiq", "siddick", "sidick")
-  
-  #now
+
   now = datetime.datetime.now(timezone)
-  
+
+
+
   #stickers
   pki = get(client.emojis, name='sidiqpki')
   oppa = get(client.emojis, name='sidiqoppa')
@@ -88,27 +89,76 @@ async def sidick_reaction(message):
   ngefak = get(client.emojis, name='sidiqngefak')
 
   if(message.author.id == int(sidiq_id)):
-    await message.add_reaction(pki)
-    await message.add_reaction(oppa)
-    await message.add_reaction(makanbang)
-    await message.add_reaction(ngefak)
-    await message.add_reaction('🇸')
-    await message.add_reaction('🇮')
-    await message.add_reaction('🇩')
-    await message.add_reaction('ℹ️')
-    await message.add_reaction('🇨')
-    await message.add_reaction('🇰')
+    global coolSidiq
+    coolSidiq += 1
 
-  if(now.time() >= dalu.time()): 
+    if(coolSidiq == 5):
+      coolSidiqTime = now
+  
+    if(coolSidiq > 5):
+      # Create datetime objects for each time (a and b)
+      dateTimeA = datetime.datetime.combine(datetime.date.today(), coolSidiqTime.time())
+      dateTimeB = datetime.datetime.combine(datetime.date.today(), now.time())
+      # Get the difference between datetimes (as timedelta)
+      dateTimeDifference = dateTimeB - dateTimeA
+      # Divide difference in seconds by number of seconds in hour (3600)  
+      dateTimeDifferenceInSeconds = dateTimeDifference.total_seconds()
+  
+      if(dateTimeDifferenceInSeconds > 60.0):
+        coolSidiq = 0
+
+    if(coolSidiq <= 5):
+      await message.add_reaction(pki)
+      await message.add_reaction(oppa)
+      await message.add_reaction(makanbang)
+      await message.add_reaction(ngefak)
+      await message.add_reaction('🇸')
+      await message.add_reaction('🇮')
+      await message.add_reaction('🇩')
+      await message.add_reaction('ℹ️')
+      await message.add_reaction('🇨')
+      await message.add_reaction('🇰')
+
+@client.listen('on_message')
+async def sidick_kasar(message):
+  global coolKasar
+  
+  #sidiq aliases
+  sidiq = ("sidiq", "siddick", "sidick")
+  
+  #stiker
+  ngefak = get(client.emojis, name='sidiqngefak')
+  
+  #now
+  now = datetime.datetime.now(timezone)
+  if(coolKasar == 2):
+      coolKasarTime = now
+  
+  if(coolKasar > 2):
+    # Create datetime objects for each time (a and b)
+    dateTimeA = datetime.datetime.combine(datetime.date.today(), coolKasarTime.time())
+    dateTimeB = datetime.datetime.combine(datetime.date.today(), now.time())
+    # Get the difference between datetimes (as timedelta)
+    dateTimeDifference = dateTimeB - dateTimeA
+    # Divide difference in seconds by number of seconds in hour (3600)  
+    dateTimeDifferenceInSeconds = dateTimeDifference.total_seconds()
+
+    if(dateTimeDifferenceInSeconds > 15.0):
+      coolKasar = 0
+
+  if(now.time() >= dalu.time() and coolKasar <= 2): 
     if(client.user.mentioned_in(message)) :
+      coolKasar += 1
       await message.channel.send('rasah ngetag-ngetag')
     
     if(f'<@!{sidiq_id}>' in message.content or  f'<@{sidiq_id}>' in message.content) :
+      coolKasar += 1
       await message.add_reaction(ngefak)
       await message.channel.send('rasah ngetag-ngetag')
     
     if(message.content in sidiq):
       await message.channel.send('opo nyuk')
+  
 
 @client.listen('on_message')
 async def message_history(message):
@@ -127,56 +177,6 @@ async def message_history(message):
 
   messages_database.insert(server, channel, new_message)
 
-  
-
-  # try:
-  #   index = int(str(message.content))
-  #   messages_sent = messages_database.get(server, channel, index)
-  #   for messages in messages_sent:
-  #     name = messages['author']
-  #     message_text = messages['message']
-  #     print(messages)
-  #     try:
-  #       attachment = messages['attachments'][0]
-  #       await message.channel.send(f'<@{name}> ngirim {message_text}\n {attachment.proxy_url}\n')
-  #     except Exception as e:
-  #       await message.channel.send(f'<@{name}> ngirim {message_text}\n ')
-  #       print(e)
-  # except Exception as e:
-  #   print(e)
-#           if(pesan[1] == 'alus' and pesan[2] == 'mode'):
-            # if(enjing.time() <= now.time() <= siang.time()):
-            #   await message.channel.send('Assalamualaikum Wr.Wb., sugeng enjing nami kula sidick')
-            # elif(siang.time() <= now.time() <= dalu.time()):
-            #   await message.channel.send('Assalamualaikum Wr.Wb., sugeng siang nami kula sidick')
-            # else:
-            #   await message.channel.send('Assalamualaikum Wr.Wb., sugeng dalu nami kula sidick')
-#           # elif(now.time() >= dalu.time()):
-#             # if(pesan[1] == 'pisuhi'):
-#             #   if(len(mentions) == 0):
-#             #     await message.channel.send('misuhi sopo nyuk')    
-#             #   else:
-#             #     for i in mentions:
-#             #       misuh = random.choice(pisuhan)
-#             #       if(isinstance(i, discord.role.Role)):
-#             #         await message.channel.send(f'{misuh} koe <@&{i.id}>')
-#             #         continue
-#             #       await message.channel.send(f'{misuh} koe <@{i.id}>')
-#           print(e)
-
-
-
-#     if(now.time() >= dalu.time()): 
-#       if(client.user.mentioned_in(message)) :
-#         await message.channel.send('rasah ngetag-ngetag')
-        
-      # if(f'<@!{sidiq_id}>' in message.content or  f'<@{sidiq_id}>' in message.content) :
-      #   await message.add_reaction(ngefak)
-      #   await message.channel.send('rasah ngetag-ngetag')
-    
-#     if(message.author.id == 282859044593598464) :
-#       await message.add_reaction('🖕')
-    
   
 @client.event
 async def on_guild_join(guild):
