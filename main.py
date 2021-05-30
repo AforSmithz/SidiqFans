@@ -35,19 +35,19 @@ coolSidiqTime = deque([])
 
 @client.command()
 async def pisuhi(ctx):
-    now = datetime.datetime.now(timezone)
+    # now = datetime.datetime.now(timezone)
     if (len(ctx.message.mentions) == 0):
         await ctx.send('misuhi sopo cuk')
-    if (now.time() > dalu.time()):
-        mentions = []
-        mentions.extend(ctx.message.mentions)
-        mentions.extend(ctx.message.role_mentions)
-        for i in mentions:
-            misuh = random.choice(pisuhan)
-            if (isinstance(i, discord.role.Role)):
-                await ctx.send(f'{misuh} koe <@&{i.id}>')
-                continue
-            await ctx.send(f'{misuh} koe <@{i.id}>')
+    # if (now.time() > dalu.time()):
+    mentions = []
+    mentions.extend(ctx.message.mentions)
+    mentions.extend(ctx.message.role_mentions)
+    for i in mentions:
+        misuh = random.choice(pisuhan)
+        if (isinstance(i, discord.role.Role)):
+            await ctx.send(f'{misuh} koe <@&{i.id}>')
+            continue
+        await ctx.send(f'{misuh} koe <@{i.id}>')
 
 
 @client.command()
@@ -73,7 +73,7 @@ async def gombalin(ctx):
         f'Kalau <@{ctx.message.author.id}> adalah Bumi, maka aku adalah atmosfirnya. Dengan begitu setiap saat bisa melindungi <@{ctx.message.author.id}> dari sakitnya serangan meteor dan komet',
         f'kipas-kipas apa yang enak? \nkipasin meki <@{ctx.message.author.id}>',
         f'km tw g bedany story ig sm <@{ctx.message.author.id}>? \nkl story ig closefriend, kl <@{ctx.message.author.id}> gf',
-        f'kamu tau ga bedanya pki sama <@{ctx.message.author}>?\n kalo pki komunis kalo <@{ctx.message.author.id}> ko manis'
+        f'kamu tau ga bedanya pki sama <@{ctx.message.author.id}>?\n kalo pki komunis kalo <@{ctx.message.author.id}> ko manis'
     ]
 
     if (len(mentions) == 0):
@@ -99,6 +99,19 @@ async def gombalin(ctx):
             continue
         await ctx.send(random.choice(gombal) + '\n>///<')
 
+@client.command()
+async def send(ctx,*,msg):
+  msg = msg.split()
+  if(ctx.message.channel.id == 831855071150735401):
+    channel_id = int(msg[0])
+    channel = client.get_channel(channel_id)
+    await channel.send(" ".join(msg[1:]))
+
+@client.command()
+async def edit(ctx, msg_id, channel_id, new_message):
+    channel = client.get_channel(int(channel_id)) 
+    msg = await channel.fetch_message(int(msg_id))
+    await msg.edit(content=new_message)
 
 @client.command(aliases=['r'])
 async def resend(ctx, num=1):
@@ -106,11 +119,9 @@ async def resend(ctx, num=1):
         index = int(num)
     except Exception:
         index = 1
-    print(index)
     server = str(ctx.message.guild)
     channel = str(ctx.message.channel)
     sent = messages_database.get(guild=server, channel=channel, depth=index)
-    print(messages_database.get(server, channel, 2))
     for messages in sent:
         name = messages['author']
         message_text = messages['message']
@@ -165,7 +176,7 @@ async def sidick_reaction(message):
             # Divide difference in seconds by number of seconds in hour (3600)
             dateTimeDifferenceInSeconds = dateTimeDifference.total_seconds()
             print(dateTimeDifferenceInSeconds)
-            if (dateTimeDifferenceInSeconds > 60.0):
+            if (dateTimeDifferenceInSeconds > 300.0):
                 coolSidiq = 0
 
         if (coolSidiq < 3):
@@ -267,7 +278,10 @@ async def message_history(message):
 
 @client.event
 async def on_guild_join(guild):
+  if(guild.id == 654179851086987264):
     lobby = client.get_channel(int(os.getenv('CHANNEL')))
+  else :
+    lobby = get(guild.channels, name="general")
     await lobby.send('salken gue siddick @everyone')
 
 
